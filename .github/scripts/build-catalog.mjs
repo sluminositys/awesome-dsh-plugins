@@ -19,6 +19,7 @@
 // Writes CATALOG.md and refreshes the entry count in README.md's "Full catalog" line.
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { readEvidence, state, writeBadges, TARGET } from './compatibility.mjs';
 
 const TOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || '';
 const MAX_CANDIDATES = Number(process.env.MAX_CANDIDATES || 400);
@@ -356,6 +357,8 @@ console.log(
 );
 
 rows.sort((a, b) => b.stars - a.stars || a.slug.localeCompare(b.slug));
+const evidence = readEvidence();
+for (const r of rows) Object.assign(r, state(r.slug, r.cmd, evidence));
 
 console.log(
   `Rows: ${rows.length} (${rows.filter((r) => r.curated).length} curated, ${rows.filter((r) => !r.curated).length} discovered). ` +
@@ -396,23 +399,24 @@ const stars = (n) => (n >= 1000 ? `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k
 const body = rows
   .map(
     (r) =>
-      `| [${esc(r.name)}](https://github.com/${r.slug}) | ${oneLine(r.blurb)} | ${stars(r.stars)} | \`${esc(r.cmd)}\` | ${r.verified ? '✅' : '—'} |`
+      `| [${esc(r.name)}](https://github.com/${r.slug}) | ${oneLine(r.blurb)} | ${stars(r.stars)} | \`${esc(r.cmd)}\` | ${r.verified ? 'yes' : 'no'} | ${r.status} | ${r.dshVersion || '—'} |`
   )
   .join('\n');
 
 const catalog = `# DSH plugin catalog
 
-Auto-generated index of every DSH plugin this repo can resolve and install-check. The curated,
+Auto-generated index of documented DSH plugin commands with separately recorded install compatibility. The curated,
 organized list is [README.md](README.md).
 
-| Plugin | What it does | ★ | Install | ✅ |
-|---|---|---|---|---|
+| Plugin | What it does | ★ | Install | Documented command | DSH install | Tested DSH version |
+|---|---|---|---|---|---|---|
 ${body}
 
 <sub>${rows.length} plugins · same rows as data in [catalog.csv](catalog.csv) · rebuilt by
 [\`build-catalog.mjs\`](.github/scripts/build-catalog.mjs) on every
-[verify-installs](.github/workflows/verify-installs.yml) run · ✅ = the install command still appears in the
-project's own README · edits here are overwritten, send them to [README.md](README.md).</sub>
+[verify-installs](.github/workflows/verify-installs.yml) run · documented command checks upstream README only;
+current = installed on DSH ${TARGET}, older = installed on another recorded version, failed = failed on ${TARGET},
+unverified = no matching install evidence · edits here are overwritten, send them to [README.md](README.md).</sub>
 `;
 
 writeFileSync('CATALOG.md', catalog);
@@ -426,10 +430,10 @@ const csvCell = (v) => {
 };
 // screenshots is semicolon-joined so the column stays one CSV field and splits without a parser.
 const csv =
-  ['name,description,stars,install_command,verified,repo_url,screenshots']
+  ['name,description,stars,install_command,verified,repo_url,screenshots,compatibility_status,tested_dsh_version,checked_at']
     .concat(
       rows.map((r) =>
-        [r.name, r.blurb, r.stars, r.cmd, r.verified, `https://github.com/${r.slug}`, r.shots.join(';')]
+        [r.name, r.blurb, r.stars, r.cmd, r.verified, `https://github.com/${r.slug}`, r.shots.join(';'), r.status, r.dshVersion, r.checkedAt]
           .map(csvCell)
           .join(',')
       )
@@ -528,7 +532,7 @@ for (const r of rows) {
   if (!categories[key]) categories[key] = { en: r.section || 'Unsorted' };
 }
 
-const REPO_URL = 'https://github.com/ZeroPointRepo/awesome-dsh-plugins';
+const REPO_URL = 'https://github.com/sluminositys/awesome-dsh-plugins';
 const feed = {
   name: 'awesome-dsh-plugins',
   url: REPO_URL,
@@ -547,6 +551,8 @@ const feed = {
       stars: r.stars,
       install: r.cmd || '',
       added: ledger.seen[r.slug],
+      documentedCommand: r.verified,
+      compatibility: { status: r.status, dshVersion: r.dshVersion, checkedAt: r.checkedAt },
     };
     const pkg = npmBySlug.get(r.slug);
     if (pkg) p.npm = pkg;
@@ -556,14 +562,15 @@ const feed = {
 };
 
 writeFileSync('plugins.json', JSON.stringify(feed, null, 2) + '\n');
+writeBadges(rows);
 console.log(
   `Wrote plugins.json (${rows.length} plugins, ${Object.keys(categories).length} categories, ` +
     `${firstSeenNew} newly added to the first-seen ledger)`
 );
 
 // Keep the README's pointer line honest about the count.
-const line = `- **Full catalog:** every verified DSH plugin (${rows.length}) in [CATALOG.md](CATALOG.md)`;
-const updated = readme.replace(/^- \*\*Full catalog:\*\* every verified DSH plugin \(\d+\) in \[CATALOG\.md\]\(CATALOG\.md\)$/m, line);
+const line = `- **Full catalog:** ${rows.length} documented plugin entries in [CATALOG.md](CATALOG.md)`;
+const updated = readme.replace(/^- \*\*Full catalog:\*\* .* in \[CATALOG\.md\]\(CATALOG\.md\)$/m, line);
 if (updated !== readme) {
   writeFileSync('README.md', updated);
   console.log('Refreshed the README catalog count');

@@ -21,7 +21,7 @@
 // Usage: GH_TOKEN=... node verify-installs.mjs README.md
 // Exit code is non-zero when a problem is found, so the Actions status badge reflects reality.
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 
 const TOKEN = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || '';
 const file = process.argv[2] || 'README.md';
@@ -193,37 +193,5 @@ if (combosDrift.length) {
   combosDrift.forEach((s) => console.log('  ' + s));
 }
 
-const total = entries.length;
-const passing = ok.length;
-const color = problems.length === 0 ? 'brightgreen' : problems.length <= 2 ? 'yellow' : 'red';
-
-mkdirSync('badges', { recursive: true });
-writeFileSync(
-  'badges/verified.json',
-  JSON.stringify(
-    {
-      schemaVersion: 1,
-      label: 'install checks',
-      message: `${passing}/${total} passing`,
-      color,
-    },
-    null,
-    2
-  ) + '\n'
-);
-writeFileSync(
-  'badges/checked-at.json',
-  JSON.stringify(
-    {
-      schemaVersion: 1,
-      label: 'last checked',
-      message: new Date().toISOString().slice(0, 10),
-      color: 'blue',
-    },
-    null,
-    2
-  ) + '\n'
-);
-
-console.log(`\nWrote badges/verified.json (${passing}/${total}) and badges/checked-at.json`);
+console.log(`\nDocumented command checks: ${ok.length}/${entries.length}; DSH install status is tracked separately.`);
 process.exit(problems.length || combosDrift.length ? 1 : 0);
