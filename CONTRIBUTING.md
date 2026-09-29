@@ -56,10 +56,12 @@ sub-bullets, nothing else in the visible line.
 
 ### Acceptance bar (we merge if all of these are true)
 
-1. **It installs.** A real `dsh plugin add` (or documented DSH-native equivalent, like the
+1. **It has a documented install path.** A real `dsh plugin add` (or documented DSH-native equivalent, like the
    `--patch` config files this list uses for remote MCP servers) that you copied out of the
    project's **own** README or docs, not one you guessed. We will check it against that project's
-   own documentation before merging, same as every existing entry.
+   own documentation before merging, same as every existing entry. Successful installation on a
+   particular DSH version is recorded separately by the compatibility check; documentation alone
+   does not earn that status.
 2. **The GitHub repo resolves**, is not archived, and is not a same-named coincidence with an
    unrelated project.
 3. **It is not already listed.**

@@ -5,8 +5,8 @@
 <p align="center">
   <a href="https://awesome.re"><img src="https://awesome.re/badge.svg" alt="Awesome" /></a>
   <img src="https://img.shields.io/badge/plugins-76-6799FE" alt="Plugin count" />
-  <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FZeroPointRepo%2Fawesome-dsh-plugins%2Fmain%2Fbadges%2Fverified.json" alt="Install checks" />
-  <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FZeroPointRepo%2Fawesome-dsh-plugins%2Fmain%2Fbadges%2Fchecked-at.json" alt="Last checked" />
+  <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsluminositys%2Fawesome-dsh-plugins%2Fmain%2Fbadges%2Fverified.json" alt="DSH 0.2 install compatibility" />
+  <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsluminositys%2Fawesome-dsh-plugins%2Fmain%2Fbadges%2Fchecked-at.json" alt="Last DSH install check" />
   <img src="https://img.shields.io/github/last-commit/ZeroPointRepo/awesome-dsh-plugins" alt="Last commit" />
   <img src="https://img.shields.io/badge/dsh-developer%20preview-a855f7" alt="DSH status" />
   <img src="https://img.shields.io/badge/status-unofficial-lightgrey" alt="Unofficial, not affiliated with DeepSeek" />
@@ -19,7 +19,7 @@
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) is DeepSeek's
 open-source agent harness, built on one bet: everything is a plugin. This list catalogs the ones
-that actually install, sorted by the job they do for you instead of the alphabet.
+with documented install commands, sorted by the job they do for you instead of the alphabet.
 
 ---
 
@@ -48,7 +48,7 @@ that actually install, sorted by the job they do for you instead of the alphabet
 | **A set that works together**, not one plugin at a time | [Starter combos](#-starter-combos) |
 | **What landed since last time** | [Recently added](#-recently-added) |
 
-- **Full catalog:** every verified DSH plugin (221) in [CATALOG.md](CATALOG.md)
+- **Full catalog:** 221 documented plugin entries in [CATALOG.md](CATALOG.md)
 - **Machine-readable:** the same rows as data in [catalog.csv](catalog.csv) and [plugins.json](plugins.json), which [dsh-market](https://github.com/dsh-market/dsh-market) reads if you point `DSHM_REGISTRY_URL` at its raw URL
 
 <details>
@@ -1070,17 +1070,17 @@ No new entries this week. [Add one](CONTRIBUTING.md).
 ## Good to know
 
 <details>
-<summary><strong>How every entry is verified</strong></summary>
+<summary><strong>Documentation checks and DSH install compatibility</strong></summary>
 
-We do not trust a README once and move on. Every entry in this list goes through the same pipeline,
-and it re-runs every week, not just at launch.
+The weekly check confirms that a repository still exists and its documented command is current.
+This is a documentation check, not proof that the command installed on a particular DSH release.
 
 ```mermaid
 flowchart LR
     A["Find a candidate\ndsh-plugin topic, other lists,\nour own reading"] --> B["Read ITS OWN docs\nfind the real dsh plugin add\ncommand, not a guess"]
     B --> C["Resolve via GitHub API\ncatches renames + archives\nthat a 200 status hides"]
     C --> D{"Command still\nin their README?\nnpm pin still current?"}
-    D -->|yes| E["Listed"]
+    D -->|yes| E["Documented command"]
     D -->|no| F["Pulled or flagged\nnever silently kept"]
     E --> G["Weekly re-check\nActions workflow, not memory"]
     G --> D
@@ -1090,9 +1090,22 @@ That pipeline is a real GitHub Actions workflow in this repo
 ([`verify-installs.yml`](.github/workflows/verify-installs.yml)), not a diagram we drew and forgot.
 It runs every Monday, re-reads each linked project's own README, confirms the install command's
 package spec still appears there, checks any npm-pinned version against the registry's current
-release, and writes the two badges at the top of this page from that run's actual result. Neither
-badge is a hand-set claim: the workflow overwrites [`badges/verified.json`](badges/verified.json)
-every run, and the badge simply displays that file.
+release. A separate [versioned install check](.github/workflows/check-compatibility.yml) runs one
+selected command with an exact DSH version in a disposable CI home and uploads its evidence as
+an artifact. Review and commit that evidence, then rebuild the catalog; the workflow has no
+write access to the repository. The recorded command, DSH
+version, result, and time determine the compatibility status in CATALOG.md, catalog.csv,
+plugins.json, and the badges. `current` means an install passed on DSH 0.2.0-rc.1; `older` means
+only an earlier recorded version passed; `failed` means the current release failed; `unverified`
+means no matching install result exists. A changed install command returns to `unverified`.
+Earlier documentation checks have no recorded DSH version, so they cannot be backfilled as install
+successes. The badge counts only `current` entries across the full catalog.
+
+The official experimental Automation tasks bundle is bundled with DSH 0.2.0-rc.1 but disabled by
+default. Enable **Automation tasks** in the Web plugin manager's **Official** group. Its package is
+[`@deepseek-ai/dsh-experimental-schedule-bundle`](https://github.com/deepseek-ai/deepseek-harness/tree/dsh-v0.2.0-rc.1/packages/experimental/schedule-bundle).
+It is an official optional bundle, not a third-party `dsh plugin add` entry, and is excluded from
+the catalog count and install-compatibility badge.
 
 </details>
 
@@ -1101,8 +1114,8 @@ every run, and the badge simply displays that file.
 
 This is a **curated list, not a security audit**. Installing a plugin runs third-party code on your
 machine with your own permissions. It can read your files, use your credentials, and reach the
-network. A plugin's presence here means the install command works and the project is real and
-active as of its last check, not that the code has been reviewed for safety. Read a plugin's source
+network. A plugin's presence here means a documented command was found, not that the install succeeds
+on your DSH version or that the code has been reviewed for safety. Read a plugin's source
 before you install it or hand it credentials, the same as you would any package or browser
 extension.
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "install checks",
-  "message": "76/76 passing",
-  "color": "brightgreen"
+  "label": "DSH 0.2.0-rc.1",
+  "message": "0/221 install verified",
+  "color": "lightgrey"
 }

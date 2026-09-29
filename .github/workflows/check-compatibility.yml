@@ -1,0 +1,33 @@
+name: Check DSH compatibility
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Exact owner/repo entry in plugins.json'
+        required: true
+        type: string
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exact DSH release candidate
+        run: npm install -g @deepseek-ai/dsh@0.2.0-rc.1
+      - name: Test one plugin in a disposable profile
+        continue-on-error: true
+        env:
+          COMPAT_REPOSITORY: ${{ inputs.repository }}
+        run: node .github/scripts/check-compatibility.mjs "$COMPAT_REPOSITORY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compatibility-evidence
+          path: .github/data/compatibility.json

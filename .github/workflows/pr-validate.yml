@@ -4,6 +4,12 @@ on:
   pull_request:
     paths:
       - "README.md"
+      - "CATALOG.md"
+      - "catalog.csv"
+      - "plugins.json"
+      - "badges/**"
+      - ".github/scripts/**"
+      - ".github/data/compatibility.json"
 
 permissions:
   pull-requests: write
@@ -14,6 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check compatibility states and generated views
+        run: node .github/scripts/test-compatibility.mjs
 
       - name: Check entry format on changed lines
         id: format
